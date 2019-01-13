@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2019
  * 
  */
-#include <tlab.hpp>
+#include <tlab/tlab.hpp>
 
 namespace tlab{
     int something(void){

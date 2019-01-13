@@ -21,4 +21,4 @@ target_link_libraries(tlab.test tlab gtest)
 
 enable_testing()
 add_test(tlab.test tlab.test)
-add_custom_command(TARGET tlab.test  POST_BUILD  COMMAND ctest -C $<CONFIGURATION> --verbose --output-on-failure )
+add_custom_command(TARGET tlab.test POST_BUILD COMMAND ctest -C $<CONFIGURATION> --verbose --output-on-failure )
