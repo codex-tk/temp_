@@ -10,4 +10,7 @@ MESSAGE( STATUS "SRCS " ${SRCS} )
 
 add_definitions("-DTLAB_VERSION_STRING=\"TLIB 0.1\"")
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../sqlite3/include )
+add_definitions("-DTLAB_ENABLE_SQLITE3_DB")
+
 add_library(tlab STATIC ${HEADERS} ${SRCS})

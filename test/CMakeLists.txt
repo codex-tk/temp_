@@ -15,9 +15,15 @@ if(Boost_FOUND)
     target_link_libraries(tlab.test ${Boost_LIBRARIES})
 endif()
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../sqlite3/include )
+add_definitions("-DTLAB_ENABLE_SQLITE3_DB")
+
 MESSAGE( STATUS "TEST SRCS " ${SRCS} )
 
-target_link_libraries(tlab.test tlab gtest)
+target_link_libraries(tlab.test tlab sqlite3 gtest)
+if(WIN32)
+    target_link_libraries(tlab.test Libcmtd)
+endif()
 
 enable_testing()
 add_test(tlab.test tlab.test)
