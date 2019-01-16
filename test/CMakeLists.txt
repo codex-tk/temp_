@@ -23,6 +23,8 @@ MESSAGE( STATUS "TEST SRCS " ${SRCS} )
 target_link_libraries(tlab.test tlab sqlite3 gtest)
 if(WIN32)
     target_link_libraries(tlab.test ws2_32)
+else()
+    target_link_libraries(tlab.test dl)
 endif()
 
 enable_testing()
