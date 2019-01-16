@@ -149,11 +149,11 @@ struct zip<Sl<Is...>, Tl<Ts...>> {
 
 } // namespace tlab::mp
 
-#ifndef TLAB_PACK_EXPANTION
+#ifndef TLAB_PACK_EXPANSION_CALL
 #if __cplusplus > 201402L
-#define TLAB_PACK_EXPANTION(exp_fun) ((exp_fun), ...)
+#define TLAB_PACK_EXPANSION_CALL(expr) ((expr), ...)
 #else
-#define TLAB_PACK_EXPANTION(exp_fun) { int dummy[] = { 0 , (exp_fun , 0) ... };}
+#define TLAB_PACK_EXPANSION_CALL(expr) { int dummy[] = { 0 , (expr , 0) ... };}
 #endif
 #endif
 
