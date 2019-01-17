@@ -180,7 +180,7 @@ public:
 template <typename... Ts>
 class derived : private base0<Ts...>, private base1<Ts, Ts...>... {
 public:
-    // visuatl studio not works
+    // visual studio not works
     // using base1<Ts, Ts...>::g...;
     derived() {}
 };

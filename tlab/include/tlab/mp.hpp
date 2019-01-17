@@ -137,14 +137,12 @@ struct size<Tl<Ts...>> {
 
 template <typename... Ts> class type_list {};
 
-template <std::size_t N, typename T> struct index_type {};
-
 template <typename Sl, typename Tl> class zip;
 
 template <template <std::size_t...> class Sl, std::size_t... Is,
           template <typename...> class Tl, typename... Ts>
 struct zip<Sl<Is...>, Tl<Ts...>> {
-    using type = type_list<index_type<Is, Ts>...>;
+    using type = type_list<type_list<std::integral_constant<std::size_t,Is>, Ts>...>;
 };
 
 } // namespace tlab::mp
