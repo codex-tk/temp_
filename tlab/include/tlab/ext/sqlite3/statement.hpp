@@ -12,6 +12,8 @@
 #define __tlab_ext_sqlite3_statment_h__
 
 #include <tlab/ext/sqlite3/connection.hpp>
+#include <tlab/ext/sqlite3/error_category.hpp>
+
 #include <tlab/mp.hpp>
 
 namespace tlab::ext::sqlite3 {
@@ -30,7 +32,7 @@ template <> inline std::string convert<std::string>(const char *val) {
 template <std::size_t I, typename... Ts>
 void set(std::tuple<Ts...> &tuple, char **arg_val) {
     std::get<I>(tuple) =
-        convert<tlab::mp::at<I, tlab::mp::type_list<Ts...>>::type>(arg_val[I]);
+        convert<typename tlab::mp::at<I, tlab::mp::type_list<Ts...>>::type>(arg_val[I]);
 }
 
 template <std::size_t... S, typename... Ts>

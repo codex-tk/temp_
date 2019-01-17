@@ -10,7 +10,6 @@
  */
 
 #include <tlab/ext/sqlite3/statement.hpp>
-#include <tlab/ext/sqlite3/error_category.hpp>
 
 namespace tlab::ext::sqlite3 {
 
