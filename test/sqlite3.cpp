@@ -39,14 +39,30 @@ TEST_F(sqlite3_fixture, stmt) {
     ASSERT_TRUE(stmt.execute("insert into sample values( 0 , 'text' )", ec));
     ASSERT_TRUE(stmt.execute("insert into sample values( 1 , 'text1' )", ec));
 
-    std::vector<std::tuple<int, std::string>> rs;
-    stmt.execute_query("select * from sample", rs, ec);
-    ASSERT_EQ(rs.size(), 2);
-    ASSERT_EQ(std::get<0>(rs[0]), 0);
-    ASSERT_STREQ(std::get<1>(rs[0]).c_str(), "text");
+    std::map<int,std::string> test_values;
+    test_values.insert(std::make_pair<int,std::string>(0,"text"));
+    test_values.insert(std::make_pair<int,std::string>(1,"text1"));
 
-    ASSERT_EQ(std::get<0>(rs[1]), 1);
-    ASSERT_STREQ(std::get<1>(rs[1]).c_str(), "text1");
+    do{
+        std::vector<std::tuple<int, std::string>> id_value_records;
+        ASSERT_TRUE(stmt.execute_query_simple("select * from sample", id_value_records, ec));
+        ASSERT_EQ(id_value_records.size(), test_values.size());
+        for( auto r : id_value_records){
+            int id = std::get<0>(r);
+            ASSERT_STREQ(std::get<1>(r).c_str(), test_values[id].c_str());
+        }
+    } while (0);
+
+    do {
+        std::vector<std::tuple<std::string,int>> value_id_records;
+        ASSERT_TRUE(stmt.execute_query_simple("select value,[id] from sample",
+                                              value_id_records, ec));
+        ASSERT_EQ(value_id_records.size(), test_values.size());
+        for( auto r : value_id_records){
+            int id = std::get<1>(r);
+            ASSERT_STREQ(std::get<0>(r).c_str(), test_values[id].c_str());
+        }
+    } while (0);
 }
 
 TEST(sqlite3, error_category) {
