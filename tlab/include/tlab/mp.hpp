@@ -145,6 +145,8 @@ struct zip<Sl<Is...>, Tl<Ts...>> {
     using type = type_list<type_list<std::integral_constant<std::size_t,Is>, Ts>...>;
 };
 
+template <typename T> struct type2type{using type = T;};
+
 } // namespace tlab::mp
 
 #ifndef TLAB_PACK_EXPANSION_CALL

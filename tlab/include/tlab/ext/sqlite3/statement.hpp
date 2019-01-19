@@ -13,6 +13,7 @@
 
 #include <tlab/ext/sqlite3/connection.hpp>
 #include <tlab/ext/sqlite3/error_category.hpp>
+#include <tlab/ext/sqlite3/result_set.hpp>
 
 #include <tlab/mp.hpp>
 
@@ -98,8 +99,12 @@ public:
         return true;
     }
 
+    result_set execute_query(const std::string& sql);
+    result_set execute_query(const std::string& sql,std::error_code &ec);
+    void close(void);
 private:
     connection &_connection;
+    sqlite3_stmt *_stmt;
 };
 
 } // namespace tlab::ext::sqlite3
