@@ -21,14 +21,21 @@ namespace tlab::ext::sqlite3 {
 class result_set {
 public:
     result_set(sqlite3_stmt *stmt) noexcept;
+
     result_set(const result_set &rhs) noexcept;
+
     result_set(result_set &&rhs) noexcept;
 
-    bool next(void);
+    bool next(void) {
+        std::error_code ec;
+        return next(ec);
+    }
+
+    bool next(std::error_code &ec);
 
     std::string get_column(std::size_t col, tlab::mp::type2type<std::string>) {
-        return std::string(
-            reinterpret_cast<const char *>(sqlite3_column_text(_stmt, static_cast<int>(col))));
+        return std::string(reinterpret_cast<const char *>(
+            sqlite3_column_text(_stmt, static_cast<int>(col))));
     }
 
     int get_column(std::size_t col, tlab::mp::type2type<int>) {

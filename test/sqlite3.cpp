@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <tlab/ext/sqlite3/connection.hpp>
 #include <tlab/ext/sqlite3/error_category.hpp>
+#include <tlab/ext/sqlite3/prepared_statement.hpp>
 #include <tlab/ext/sqlite3/statement.hpp>
 
 void gprintf(const char *fmt, ...);
@@ -74,19 +75,79 @@ TEST_F(sqlite3_fixture, stmt_execute_query) {
     ASSERT_TRUE(stmt.execute("insert into sample values( 0 , 'text' )", ec));
     ASSERT_TRUE(stmt.execute("insert into sample values( 1 , 'text1' )", ec));
 
-    tlab::ext::sqlite3::result_set rs = stmt.execute_query("select * from sample" , ec);
+    tlab::ext::sqlite3::result_set rs =
+        stmt.execute_query("select * from sample", ec);
     ASSERT_TRUE(!ec);
     int proc = 0;
-    while(rs.next()){
-        std::tuple<int,std::string> row = rs.get_row<int,std::string>();
+    while (rs.next()) {
+        std::tuple<int, std::string> row = rs.get_row<int, std::string>();
         int id = std::get<0>(row);
         ASSERT_STREQ(std::get<1>(row).c_str(), test_values[id].c_str());
         ++proc;
     }
-    ASSERT_EQ(proc,2);
+    ASSERT_EQ(proc, 2);
     stmt.close();
     _conn.close();
 }
+
+TEST_F(sqlite3_fixture, prepared_stmt) {
+    std::error_code ec;
+    ASSERT_TRUE(_conn.open("./sample.db", ec));
+    do {
+        tlab::ext::sqlite3::statement stmt(_conn);
+        ASSERT_TRUE(stmt.execute("DROP TABLE IF EXISTS sample", ec));
+        ASSERT_TRUE(
+            stmt.execute("CREATE TABLE IF NOT EXISTS sample([id] INTEGER  "
+                         "NOT NULL PRIMARY KEY , value TEXT )",
+                         ec));
+        stmt.close();
+    } while (0);
+
+    do {
+        tlab::ext::sqlite3::prepared_statement insert_stmt(_conn);
+        ASSERT_TRUE(
+            insert_stmt.prepare("insert into sample values( ? , ?)", ec));
+        ASSERT_TRUE(insert_stmt.bind(0, std::string("text")));
+        ASSERT_TRUE(insert_stmt.execute_non_query());
+
+        insert_stmt.reset();
+        insert_stmt.clear_bindings();
+
+        ASSERT_TRUE(insert_stmt.bind(1, std::string("text1")));
+        ASSERT_TRUE(insert_stmt.execute_non_query());
+
+        insert_stmt.close();
+    } while (0);
+
+    tlab::ext::sqlite3::prepared_statement pstmt(_conn);
+    ASSERT_TRUE(
+        pstmt.prepare("select * from sample where id = ? and value = ?", ec));
+    ASSERT_TRUE(pstmt.bind(1, std::string("text1")));
+
+    tlab::ext::sqlite3::result_set rs = pstmt.execute_query();
+    ASSERT_TRUE(rs.next());
+    std::tuple<int, std::string> row = rs.get_row<int, std::string>();
+    ASSERT_EQ(std::get<0>(row), 1);
+    ASSERT_EQ(std::get<1>(row), std::string("text1"));
+    ASSERT_FALSE(rs.next(ec));
+    ASSERT_FALSE(ec);
+    pstmt.reset();
+    pstmt.clear_bindings();
+
+    ASSERT_TRUE(pstmt.bind(0, std::string("text")));
+
+    tlab::ext::sqlite3::result_set rs2 = pstmt.execute_query();
+    ASSERT_TRUE(rs2.next());
+    row = rs.get_row<int, std::string>();
+    ASSERT_EQ(std::get<0>(row), 0);
+    ASSERT_EQ(std::get<1>(row), std::string("text"));
+    ASSERT_FALSE(rs2.next(ec));
+    ASSERT_FALSE(ec);
+
+    pstmt.close();
+    _conn.close();
+}
+
 TEST(sqlite3, error_category) {
     std::error_code ec(516, tlab::ext::sqlite3::error_category::instance());
     gprintf("%s", ec.message().c_str());

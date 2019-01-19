@@ -19,10 +19,17 @@ result_set::result_set(const result_set &rhs) noexcept : _stmt(rhs._stmt) {}
 
 result_set::result_set(result_set &&rhs) noexcept : _stmt(rhs._stmt) {}
 
-bool result_set::next(void) {
+bool result_set::next(std::error_code& ec){
     if (_stmt) {
-        return sqlite3_step(_stmt) == SQLITE_ROW;
+        int r = sqlite3_step(_stmt);
+        switch(r){
+            case SQLITE_ROW: return true;
+            case SQLITE_DONE: return false;
+            default:
+                ec = std::error_code(r,tlab::ext::sqlite3::error_category::instance());
+        }
     }
+    ec = std::make_error_code(std::errc::owner_dead);
     return false;
 }
 
