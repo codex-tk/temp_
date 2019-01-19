@@ -230,3 +230,9 @@ TEST(pack, pack) {
 }
 
 #endif
+
+TEST(mp,tuple){
+    tlab::mp::exp::tuple<int,std::string,double> tp(1,std::string("1"),0.4);
+    ASSERT_EQ(tlab::mp::exp::get<0>(tp),1);
+    ASSERT_EQ(tlab::mp::exp::get<2>(tp),0.4);
+}

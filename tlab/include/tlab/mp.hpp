@@ -142,10 +142,34 @@ template <typename Sl, typename Tl> class zip;
 template <template <std::size_t...> class Sl, std::size_t... Is,
           template <typename...> class Tl, typename... Ts>
 struct zip<Sl<Is...>, Tl<Ts...>> {
-    using type = type_list<type_list<std::integral_constant<std::size_t,Is>, Ts>...>;
+    using type =
+        type_list<type_list<std::integral_constant<std::size_t, Is>, Ts>...>;
 };
 
-template <typename T> struct type2type{using type = T;};
+template <typename T> struct type2type { using type = T; };
+
+namespace exp {
+
+template <std::size_t I, typename T> struct storage {
+    storage(T &&t) : value(t) {}
+    T value;
+};
+
+template <typename S, typename... Ts> struct storage_host;
+template <std::size_t... S, typename... Ts>
+struct storage_host<tlab::mp::index_sequence<S...>, Ts...> : storage<S, Ts>... {
+    storage_host(Ts &&... args) : storage<S, Ts>(std::forward<Ts>(args))... {}
+};
+
+template <typename... Ts>
+using tuple = storage_host<tlab::mp::make_index_sequence<sizeof...(Ts)>, Ts...>;
+
+template <std::size_t I, typename T>
+T get(exp::storage<I,T> &v){
+    return v.value;
+}
+
+} // namespace exp
 
 } // namespace tlab::mp
 
@@ -153,7 +177,8 @@ template <typename T> struct type2type{using type = T;};
 #if __cplusplus > 201402L
 #define TLAB_PACK_EXPANSION_CALL(expr) ((expr), ...)
 #else
-#define TLAB_PACK_EXPANSION_CALL(expr) { int dummy[] = { 0 , (expr , 0) ... };}
+#define TLAB_PACK_EXPANSION_CALL(expr)                                         \
+    { int dummy[] = {0, (expr, 0)...}; }
 #endif
 #endif
 

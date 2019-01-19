@@ -106,15 +106,14 @@ TEST_F(sqlite3_fixture, prepared_stmt) {
     do {
         tlab::ext::sqlite3::prepared_statement insert_stmt(_conn);
         ASSERT_TRUE(
-            insert_stmt.prepare("insert into sample values( ? , ?)", ec));
-        ASSERT_TRUE(insert_stmt.bind(0, std::string("text")));
-        ASSERT_TRUE(insert_stmt.execute_non_query());
+            insert_stmt.prepare("insert into sample values(?,?)", ec));
 
-        insert_stmt.reset();
-        insert_stmt.clear_bindings();
-
-        ASSERT_TRUE(insert_stmt.bind(1, std::string("text1")));
-        ASSERT_TRUE(insert_stmt.execute_non_query());
+        for (auto it : test_values) {
+            insert_stmt.reset();
+            insert_stmt.clear_bindings();
+            ASSERT_TRUE(insert_stmt.bind(it.first, it.second));
+            ASSERT_TRUE(insert_stmt.execute_non_query());
+        }
 
         insert_stmt.close();
     } while (0);
