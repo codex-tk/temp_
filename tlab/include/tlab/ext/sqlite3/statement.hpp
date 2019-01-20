@@ -44,8 +44,7 @@ void expantion0(tlab::mp::index_sequence<S...>, std::tuple<Ts...> &tuple,
 }
 
 template <std::size_t I, typename... Ts>
-auto get(char **arg_val) ->
-    typename tlab::mp::at<I, tlab::mp::type_list<Ts...>>::type {
+typename tlab::mp::at<I, tlab::mp::type_list<Ts...>>::type get(char **arg_val) {
     return convert<typename tlab::mp::at<I, tlab::mp::type_list<Ts...>>::type>(
         arg_val[I]);
 }
