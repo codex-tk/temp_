@@ -1,5 +1,5 @@
 /**
- * @file service.hpp
+ * @file logging_service.hpp
  * @author ghtak
  * @brief
  * @version 0.1
@@ -9,12 +9,12 @@
  *
  */
 
-#ifndef __tlab_log_service_h__
-#define __tlab_log_service_h__
+#ifndef __tlab_log_logging_service_h__
+#define __tlab_log_logging_service_h__
 
 namespace tlab::log {
 
-class service {};
+class logging_service {};
 
 } // namespace tlab::log
 

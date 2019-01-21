@@ -21,11 +21,10 @@ class logger {
 public:
     logger(void);
 
-    inline bool accept(const tlab::log::level lvl) {
-        return static_cast<int>(lvl) & _filter;
-    }
+    inline bool accept(const tlab::log::level lvl) { return lvl >= _level; }
 
-    void log(const tlab::log::level lvl, const char *message, ...);
+    void log(const tlab::log::level lvl, tlab::log::local_context local_context,
+             const char *message, ...);
 
     void add_service(std::shared_ptr<service> ptr);
 
@@ -33,7 +32,7 @@ public:
     static logger &instance(void);
 
 private:
-    int _filter;
+    tlab::log::level _level;
     std::vector<std::shared_ptr<service>> _services;
 };
 
