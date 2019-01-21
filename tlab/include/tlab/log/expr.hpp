@@ -25,7 +25,7 @@ struct timestamp {
 #if defined(_WIN32) || defined(__WIN32__)
         localtime_s(&tm, &now);
 #else
-        localtime_r(&tm, &now);
+        localtime_r(&now , &tm);
 #endif
         char buf[16] = {
             0,
