@@ -14,9 +14,6 @@
 
 #include <tlab/log/log.hpp>
 
-#include <iostream>
-#include <filesystem>
-
 namespace tlab::log::expr {
 
 struct timestamp {
