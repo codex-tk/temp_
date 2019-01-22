@@ -70,11 +70,11 @@ public:
 };
 
 TEST(log, format) {
-    format_service< _w<'[', timestamp, ']'>, _c<' '>,
-                    _w<'[', message, ']'>, _c<' '>, 
-                    _w<'[', message, ']'>, _c<' '>,
-                    _w<'[', message, ']'>, _c<' '>, 
-                    _w<'[', message, ']'>, _c<' '>, 
+    format_service< _w<'[', timestamp,  ']'>, _c<' '>,
+                    _w<'[', message,    ']'>, _c<' '>, 
+                    _w<'[', message,    ']'>, _c<' '>,
+                    _w<'[', message,    ']'>, _c<' '>, 
+                    _w<'[', message,    ']'>, _c<' '>, 
                     timestamp> svc;
 
     ASSERT_EQ(
@@ -149,19 +149,19 @@ TEST(log, expr) {
 
 class gprintf_ostream {
 public:
-    struct record_stream_type{
+    struct record_stream_type {
         std::stringstream ss;
         tlab::log::level lvl;
 
-        template < typename T >
-        record_stream_type& operator<<(const T& t){
+        template <typename T> record_stream_type &operator<<(const T &t) {
             ss << t;
             return *this;
         }
     };
 
-    struct extract_level{
-        static void append_to(record_stream_type &strm, const tlab::log::record &r) {
+    struct extract_level {
+        static void append_to(record_stream_type &strm,
+                              const tlab::log::record &r) {
             strm.lvl = r.lvl;
         }
     };
@@ -176,35 +176,31 @@ public:
                           FOREGROUND_BLUE,
                           FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED |
                               FOREGROUND_INTENSITY};
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), colors[static_cast<int>(rstrm.lvl)]);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
+                                colors[static_cast<int>(rstrm.lvl)]);
 #else
         int colors[] = {32, 33, 36, 35, 31, 34};
-        printf("\033[%dm" ,colors[static_cast<int>(rstrm.lvl)]);
-#endif 
+        printf("\033[%dm", colors[static_cast<int>(rstrm.lvl)]);
+#endif
         gprintf("%s", rstrm.ss.str().c_str());
 #if defined(_WIN32) || defined(__WIN32__)
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED |
-                              FOREGROUND_INTENSITY);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
+                                FOREGROUND_BLUE | FOREGROUND_GREEN |
+                                    FOREGROUND_RED | FOREGROUND_INTENSITY);
 #else
         printf("\033[0m");
 #endif
     }
-    template <typename T> struct rebind;
 
-    template <typename... Ts> struct rebind<tlab::log::expr::format<Ts...>> {
-        using type = tlab::log::expr::format<extract_level, Ts...>;
+    template <typename T> struct rebind { using type = T; };
+
+    template <template <typename...> class List, typename... Ts>
+    struct rebind<List<Ts...>> {
+        using type = List<extract_level, Ts...>;
     };
 };
 
 TEST(log, logger) {
-    /*
-    using fmt_type = tlab::mp::push_back<
-        tlab::mp::push_front<tlab::log::expr::basic_format,
-                             tlab::log::expr::ansi_color_begin>::type,
-        tlab::log::expr::ansi_color_end>::type;
-    std::shared_ptr<tlab::log::logging_service> svc(
-        new tlab::log::basic_logging_service<fmt_type,gprintf_ostream>());
-    */
     std::shared_ptr<tlab::log::logging_service> svc(
         new tlab::log::basic_logging_service<tlab::log::expr::basic_format,
                                              gprintf_ostream>());
