@@ -154,7 +154,7 @@ template <typename... Ts> void print_sample(Ts... args) {
     // int dummy[sizeof...(Ts)] = { (std::cout << args, 0)... };
 }
 
-TEST(pack, print_sample) { print_sample(1, 2, 3, "Test"); }
+TEST(pack, print_sample) { print_sample(1, 2, 3, "Test", "\n"); }
 
 template <typename T, typename U, typename... Ts>
 void tuple_test(T t, U u, Ts... ts) {

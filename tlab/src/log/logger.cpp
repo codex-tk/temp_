@@ -10,6 +10,7 @@
  */
 
 #include <tlab/log/logger.hpp>
+#include <tlab/log/logging_service.hpp>
 
 void gprintf(const char *fmt, ...);
 
@@ -18,17 +19,21 @@ namespace tlab::log {
 logger::logger(void) : _level(tlab::log::level::trace) {}
 
 void logger::log(const tlab::log::level lvl,
-                 tlab::log::local_context local_context, const char *message,
-                 ...) {
-    tlab::log::record r(lvl,nullptr,nullptr,local_context);
+                 tlab::log::local_context local_context, const char *tag,
+                 const char *message, ...) {
+    char buff[4096] = {0,};
     va_list args;
     va_start(args, message);
-    gprintf("%s %s %d", local_context.file , local_context.function , local_context.line );
-    gprintf(message, args);
+    vsnprintf(buff,4096,message,args);
     va_end(args);
+    
+    tlab::log::record r(lvl, tag, buff, local_context);
+    for(auto it : _services){
+        it->handle_record(r);
+    }
 }
 
-void logger::add_service(std::shared_ptr<service> ptr) {
+void logger::add_service(std::shared_ptr<logging_service> ptr) {
     _services.push_back(ptr);
 }
 

@@ -12,9 +12,16 @@
 #ifndef __tlab_log_logging_service_h__
 #define __tlab_log_logging_service_h__
 
+#include <tlab/log/log.hpp>
+
 namespace tlab::log {
 
-class logging_service {};
+class logging_service {
+public:
+    virtual ~logging_service(void) noexcept {}
+
+    virtual void handle_record(const log::record& r) = 0;
+};
 
 } // namespace tlab::log
 

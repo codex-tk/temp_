@@ -15,7 +15,7 @@
 
 namespace tlab::log {
 
-class service;
+class logging_service;
 
 class logger {
 public:
@@ -24,16 +24,22 @@ public:
     inline bool accept(const tlab::log::level lvl) { return lvl >= _level; }
 
     void log(const tlab::log::level lvl, tlab::log::local_context local_context,
-             const char *message, ...);
+             const char *tag, const char *message, ...);
 
-    void add_service(std::shared_ptr<service> ptr);
+    template <typename... Ts>
+    void logT(const tlab::log::level lvl,
+              tlab::log::local_context local_context, const char *tag,
+              const char *message, Ts &&... args) {
 
+    }
+
+    void add_service(std::shared_ptr<logging_service> ptr);
 public:
     static logger &instance(void);
 
 private:
     tlab::log::level _level;
-    std::vector<std::shared_ptr<service>> _services;
+    std::vector<std::shared_ptr<logging_service>> _services;
 };
 
 } // namespace tlab::log
