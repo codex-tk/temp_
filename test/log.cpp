@@ -200,11 +200,36 @@ public:
     };
 };
 
+#if defined(_WIN32) || defined(__WIN32__)
+class w32_debug_ostream {
+public:
+    using record_stream_type = std::stringstream;
+
+    void operator<<(const record_stream_type &rstrm) {
+        OutputDebugStringA(rstrm.str().c_str());
+        OutputDebugStringA("\r\n");
+    }
+
+    template <typename T> struct rebind { using type = T; };
+};
+#endif
+
 TEST(log, logger) {
     std::shared_ptr<tlab::log::logging_service> svc(
         new tlab::log::basic_logging_service<tlab::log::expr::basic_format,
                                              gprintf_ostream>());
+                                             
     tlab::log::logger::instance().add_service(svc);
+
+    
+#if defined(_WIN32) || defined(__WIN32__)
+    std::shared_ptr<tlab::log::logging_service> svc2(
+        new tlab::log::basic_logging_service<tlab::log::expr::basic_format,
+                                             w32_debug_ostream>());
+
+    
+    tlab::log::logger::instance().add_service(svc2);
+#endif    
     TLOG_D("test message");
     TLOG_D("test message int %d", int(32));
 }
