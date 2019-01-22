@@ -25,7 +25,7 @@ public:
 
     virtual void handle_record(const log::record &r) override {
         typename Ostream::record_stream_type rstrm;
-        using ostream_format = typename Ostream::rebind<Format>::type;
+        using ostream_format = typename Ostream::template rebind<Format>::type;
         ostream_format::append_to(rstrm,r);
         _ostream << rstrm;
     }

@@ -134,7 +134,7 @@ template <char ... Chars> struct chars {
     template <typename StreamT>
     static void append_to(StreamT &strm, const log::record &) {
 #if __cplusplus > 201402L
-        (strm << Chars), ...);
+        ((strm << Chars), ...);
 #else
         int dummy[] = {((strm << Chars),0) ... };
         tlab::ignore = dummy;
