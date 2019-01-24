@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <tlab/log/basic_logging_service.hpp>
 #include <tlab/log/output.hpp>
+#include <tlab/log/outputs/console_output.hpp>
 #include <tlab/log/expr.hpp>
 #include <tlab/log/logger.hpp>
 #include <tlab/mp.hpp>
@@ -164,16 +165,14 @@ public:
                               FOREGROUND_INTENSITY};
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
                                 colors[static_cast<int>(r.lvl)]);
-#else
-        int colors[] = {32, 33, 36, 35, 31, 34};
-        printf("\033[%dm", colors[static_cast<int>(r.lvl)]);
-#endif
         gprintf("%s", ptr);
-#if defined(_WIN32) || defined(__WIN32__)
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
                                 FOREGROUND_BLUE | FOREGROUND_GREEN |
                                     FOREGROUND_RED | FOREGROUND_INTENSITY);
 #else
+        int colors[] = {32, 33, 36, 35, 31, 34};
+        printf("\033[%dm", colors[static_cast<int>(r.lvl)]);
+        gprintf("%s", ptr);
         printf("\033[0m");
 #endif
     }
@@ -196,6 +195,7 @@ TEST(log, logger) {
             tlab::log::basic_logging_service<tlab::log::expr::basic_format>>());
 
     svc->add_output(std::make_shared<gtest_out>());
+    svc->add_output(std::make_shared<tlab::log::console_output>());
 #if defined(_WIN32) || defined(__WIN32__)
     svc->add_output(std::make_shared<w32_debug_out>());
 #endif
