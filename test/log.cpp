@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <tlab/log/basic_logging_service.hpp>
+#include <tlab/log/output.hpp>
 #include <tlab/log/expr.hpp>
 #include <tlab/log/logger.hpp>
 #include <tlab/mp.hpp>
@@ -128,6 +129,7 @@ TEST(log, const_str_type_) {
     ASSERT_EQ(at<0>("Hello"), 'H');
 
     const char hello[] = "Hello";
+    tlab::ignore = hello;
     // const_str_template<length("Hello") , "Hello" > e;
     /*
     const_str_template<length(hello) , hello> e;
@@ -143,30 +145,14 @@ TEST(log, expr) {
 
     tlab::log::local_context lctx(__FILE__, __FUNCTION__, __LINE__);
     tlab::log::record r(tlab::log::level::debug, "tag", "message", lctx);
-    formatter.append_to(ss, r);
+    formatter.write(ss, r);
     gprintf("%s", ss.str().c_str());
 }
 
-class gprintf_ostream {
+class gtest_out : public tlab::log::output {
 public:
-    struct record_stream_type {
-        std::stringstream ss;
-        tlab::log::level lvl;
-
-        template <typename T> record_stream_type &operator<<(const T &t) {
-            ss << t;
-            return *this;
-        }
-    };
-
-    struct extract_level {
-        static void append_to(record_stream_type &strm,
-                              const tlab::log::record &r) {
-            strm.lvl = r.lvl;
-        }
-    };
-
-    void operator<<(const record_stream_type &rstrm) {
+    virtual void put(const char *ptr, const std::size_t /*sz*/,
+                     const tlab::log::record &r) {
 #if defined(_WIN32) || defined(__WIN32__)
         WORD colors[7] = {FOREGROUND_GREEN,
                           FOREGROUND_GREEN | FOREGROUND_RED,
@@ -177,12 +163,12 @@ public:
                           FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED |
                               FOREGROUND_INTENSITY};
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
-                                colors[static_cast<int>(rstrm.lvl)]);
+                                colors[static_cast<int>(r.lvl)]);
 #else
         int colors[] = {32, 33, 36, 35, 31, 34};
-        printf("\033[%dm", colors[static_cast<int>(rstrm.lvl)]);
+        printf("\033[%dm", colors[static_cast<int>(r.lvl)]);
 #endif
-        gprintf("%s", rstrm.ss.str().c_str());
+        gprintf("%s", ptr);
 #if defined(_WIN32) || defined(__WIN32__)
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
                                 FOREGROUND_BLUE | FOREGROUND_GREEN |
@@ -191,45 +177,29 @@ public:
         printf("\033[0m");
 #endif
     }
-
-    template <typename T> struct rebind { using type = T; };
-
-    template <template <typename...> class List, typename... Ts>
-    struct rebind<List<Ts...>> {
-        using type = List<extract_level, Ts...>;
-    };
 };
 
 #if defined(_WIN32) || defined(__WIN32__)
-class w32_debug_ostream {
+class w32_debug_out : public tlab::log::output {
 public:
-    using record_stream_type = std::stringstream;
-
-    void operator<<(const record_stream_type &rstrm) {
-        OutputDebugStringA(rstrm.str().c_str());
+    virtual void put(const char *ptr, const std::size_t,
+                     const tlab::log::record &) {
+        OutputDebugStringA(ptr);
         OutputDebugStringA("\r\n");
     }
-
-    template <typename T> struct rebind { using type = T; };
 };
 #endif
 
 TEST(log, logger) {
     std::shared_ptr<tlab::log::logging_service> svc(
-        new tlab::log::basic_logging_service<tlab::log::expr::basic_format,
-                                             gprintf_ostream>());
-                                             
-    tlab::log::logger::instance().add_service(svc);
+        std::make_shared<
+            tlab::log::basic_logging_service<tlab::log::expr::basic_format>>());
 
-    
+    svc->add_output(std::make_shared<gtest_out>());
 #if defined(_WIN32) || defined(__WIN32__)
-    std::shared_ptr<tlab::log::logging_service> svc2(
-        new tlab::log::basic_logging_service<tlab::log::expr::basic_format,
-                                             w32_debug_ostream>());
-
-    
-    tlab::log::logger::instance().add_service(svc2);
-#endif    
+    svc->add_output(std::make_shared<w32_debug_out>());
+#endif
+    tlab::log::logger::instance().add_service(svc);
     TLOG_D("test message");
     TLOG_D("test message int %d", int(32));
 }

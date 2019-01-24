@@ -13,14 +13,17 @@
 #define __tlab_log_logging_service_h__
 
 #include <tlab/log/log.hpp>
+#include <tlab/log/output.hpp>
 
 namespace tlab::log {
 
 class logging_service {
 public:
-    virtual ~logging_service(void) noexcept {}
+    virtual void handle_record(const log::record &r) = 0;
 
-    virtual void handle_record(const log::record& r) = 0;
+    void add_output(const std::shared_ptr<tlab::log::output>& optr);
+protected:
+    std::vector<std::shared_ptr<tlab::log::output>> _outputs;
 };
 
 } // namespace tlab::log

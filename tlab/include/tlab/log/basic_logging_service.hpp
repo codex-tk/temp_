@@ -13,10 +13,11 @@
 #define __tlab_log_basic_logging_service_h__
 
 #include <tlab/log/logging_service.hpp>
+#include <tlab/log/ostringstream_buffer.hpp>
 
 namespace tlab::log {
 
-template <typename Format, typename Ostream>
+template <typename FormatT, typename BufferT = ostringstream_buffer>
 class basic_logging_service : public logging_service {
 public:
     basic_logging_service(void) {}
@@ -24,13 +25,15 @@ public:
     virtual ~basic_logging_service(void) noexcept {}
 
     virtual void handle_record(const log::record &r) override {
-        typename Ostream::record_stream_type rstrm;
-        using ostream_format = typename Ostream::template rebind<Format>::type;
-        ostream_format::append_to(rstrm,r);
-        _ostream << rstrm;
+        _buffer.clear();
+        FormatT::write(_buffer, r);
+        for (auto it : _outputs) {
+            it->put_buffer(_buffer, r);
+        }
     }
+
 private:
-    Ostream _ostream;
+    BufferT _buffer;
 };
 
 } // namespace tlab::log
