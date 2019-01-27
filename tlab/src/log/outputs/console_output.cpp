@@ -9,17 +9,6 @@
  *
  */
 
-/**
- * @file console_output.hpp
- * @author ghtak
- * @brief
- * @version 0.1
- * @date 2019-01-24
- *
- * @copyright Copyright (c) 2019
- *
- */
-
 #include <tlab/log/outputs/console_output.hpp>
 
 namespace tlab::log {

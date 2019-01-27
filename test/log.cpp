@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 #include <tlab/log/basic_logging_service.hpp>
-#include <tlab/log/output.hpp>
-#include <tlab/log/outputs/console_output.hpp>
 #include <tlab/log/expr.hpp>
 #include <tlab/log/logger.hpp>
+#include <tlab/log/output.hpp>
+#include <tlab/log/outputs/console_output.hpp>
+#include <tlab/log/outputs/file_output.hpp>
 #include <tlab/mp.hpp>
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -72,12 +73,11 @@ public:
 };
 
 TEST(log, format) {
-    format_service< _w<'[', timestamp,  ']'>, _c<' '>,
-                    _w<'[', message,    ']'>, _c<' '>, 
-                    _w<'[', message,    ']'>, _c<' '>,
-                    _w<'[', message,    ']'>, _c<' '>, 
-                    _w<'[', message,    ']'>, _c<' '>, 
-                    timestamp> svc;
+    format_service<_w<'[', timestamp, ']'>, _c<' '>, _w<'[', message, ']'>,
+                   _c<' '>, _w<'[', message, ']'>, _c<' '>,
+                   _w<'[', message, ']'>, _c<' '>, _w<'[', message, ']'>,
+                   _c<' '>, timestamp>
+        svc;
 
     ASSERT_EQ(
         std::string(
@@ -86,10 +86,7 @@ TEST(log, format) {
 
     format_service<w0<'[', ']', timestamp, message, message>> svc2;
 
-    ASSERT_EQ(
-        std::string(
-            "[timestamp][message][message]"),
-        svc2.value());
+    ASSERT_EQ(std::string("[timestamp][message][message]"), svc2.value());
 }
 namespace {
 
@@ -123,7 +120,7 @@ struct const_str_template0<tlab::mp::index_sequence<Is...>, arr> {
     using type = chars<ch_at<Is, arr>::ch...>;
 };
 */
-}
+} // namespace
 TEST(log, const_str_type_) {
     static_assert(std::is_same<tlab::mp::make_index_sequence<length("Hello")>,
                                tlab::mp::index_sequence<0, 1, 2, 3, 4>>::value);
@@ -199,6 +196,7 @@ TEST(log, logger) {
 #if defined(_WIN32) || defined(__WIN32__)
     svc->add_output(std::make_shared<w32_debug_out>());
 #endif
+    svc->add_output(std::make_shared<tlab::log::file_output>("./log" , 30 , 1));
     tlab::log::logger::instance().add_service(svc);
     TLOG_D("test message");
     TLOG_D("test message int %d", int(32));
