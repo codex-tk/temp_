@@ -1,6 +1,10 @@
 project(tlab)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/BasicUsageEnvironment/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/groupsock/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/UsageEnvironment/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/liveMedia/include)
 
 file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp )
 file(GLOB_RECURSE SRCS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp )

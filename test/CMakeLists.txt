@@ -1,6 +1,10 @@
 project(tlab.test)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../tlab/include )
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../tlab/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/BasicUsageEnvironment/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/groupsock/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/UsageEnvironment/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../live555/liveMedia/include )
 
 file(GLOB_RECURSE SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp )
 
@@ -20,7 +24,7 @@ add_definitions("-DTLAB_ENABLE_SQLITE3_DB")
 
 MESSAGE( STATUS "TEST SRCS " ${SRCS} )
 
-target_link_libraries(tlab.test tlab sqlite3 gtest)
+target_link_libraries(tlab.test tlab sqlite3 live555 gtest)
 if(WIN32)
     target_link_libraries(tlab.test ws2_32)
 else()
