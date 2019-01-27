@@ -1,8 +1,8 @@
 
 #include <gtest/gtest.h>
-#include "BasicUsageEnvironment.hh"
-#include "liveMedia.hh"
+#include <tlab/ext/live555/envir_loop.hpp>
 
 TEST(live555, BasicUsageEnvironment) {
-    BasicTaskScheduler* ptr = BasicTaskScheduler::createNew();
+    tlab::ext::live555::envir_loop loop;
+    loop.run([] {});
 }
