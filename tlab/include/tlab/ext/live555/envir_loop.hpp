@@ -30,6 +30,9 @@ public:
         std::scoped_lock<std::mutex> guard(_lock);
         _functions.emplace_back(handler);
     }
+
+    UsageEnvironment &envir(void) { return *_env_ptr; }
+
 private:
     TaskScheduler *_scheduler_ptr;
     UsageEnvironment *_env_ptr;
