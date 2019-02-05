@@ -1,0 +1,58 @@
+/**
+ * @file compessed_pair.hpp
+ * @author ghtak
+ * @brief
+ * @version 0.1
+ * @date 2019-02-05
+ *
+ * @copyright Copyright (c) 2019
+ *
+ */
+#ifndef __tlab_compress_pair_h__
+#define __tlab_compress_pair_h__
+
+namespace tlab {
+
+template <typename FirstT, typename SecondT,
+          bool is_first_empty = __is_empty(FirstT)>
+class compressed_pair : private FirstT {
+public:
+    compressed_pair(void) : FirstT() {}
+    compressed_pair(const FirstT &f, const SecondT &s)
+        : FirstT(f), _second(s) {}
+    explicit compressed_pair(const FirstT &f) : FirstT(f) {}
+    explicit compressed_pair(const SecondT &s) : FirstT(), _second(s) {}
+
+    FirstT &first(void) noexcept { return (*this); }
+    SecondT &second(void) noexcept { return _second; }
+
+    const FirstT &first(void) const noexcept { return (*this); }
+    const SecondT &second(void) const noexcept { return _second; }
+
+private:
+    SecondT _second;
+};
+
+template <typename FirstT, typename SecondT>
+class compressed_pair<FirstT, SecondT, false> {
+public:
+    compressed_pair(void) {}
+    compressed_pair(const FirstT &f, const SecondT &s)
+        : _first(f), _second(s) {}
+    explicit compressed_pair(const FirstT &f) : _first(f) {}
+    explicit compressed_pair(const SecondT &s) : _second(s) {}
+
+    FirstT &first(void) noexcept { return _first; }
+    SecondT &second(void) noexcept { return _second; }
+
+    const FirstT &first(void) const noexcept { return _first; }
+    const SecondT &second(void) const noexcept { return _second; }
+
+private:
+    FirstT _first;
+    SecondT _second;
+};
+
+} // namespace tlab
+
+#endif

@@ -71,6 +71,7 @@
         "locale": "cpp",
         "string_view": "cpp",
         "xlocbuf": "cpp",
-        "xlocmes": "cpp"
+        "xlocmes": "cpp",
+        "xxatomic": "cpp"
     }
 }
