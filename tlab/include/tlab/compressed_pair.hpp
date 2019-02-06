@@ -1,5 +1,5 @@
 /**
- * @file compessed_pair.hpp
+ * @file compressed_pair.hpp
  * @author ghtak
  * @brief
  * @version 0.1
@@ -8,8 +8,8 @@
  * @copyright Copyright (c) 2019
  *
  */
-#ifndef __tlab_compress_pair_h__
-#define __tlab_compress_pair_h__
+#ifndef __tlab_compressed_pair_h__
+#define __tlab_compressed_pair_h__
 
 namespace tlab {
 
@@ -20,6 +20,11 @@ public:
     compressed_pair(void) : FirstT() {}
     compressed_pair(const FirstT &f, const SecondT &s)
         : FirstT(f), _second(s) {}
+    compressed_pair(const compressed_pair &rhs)
+        : FirstT(rhs.first()), _second(rhs.second()) {}
+    compressed_pair(compressed_pair &&rhs)
+        : FirstT(std::move(rhs.first())), _second(std::move(rhs._second)) {}
+
     explicit compressed_pair(const FirstT &f) : FirstT(f) {}
     explicit compressed_pair(const SecondT &s) : FirstT(), _second(s) {}
 
@@ -39,6 +44,10 @@ public:
     compressed_pair(void) {}
     compressed_pair(const FirstT &f, const SecondT &s)
         : _first(f), _second(s) {}
+    compressed_pair(const compressed_pair &rhs)
+        : _first(rhs.first()), _second(rhs.second()) {}
+    compressed_pair(compressed_pair &&rhs)
+        : _first(std::move(rhs.first())), _second(std::move(rhs.second())) {}
     explicit compressed_pair(const FirstT &f) : _first(f) {}
     explicit compressed_pair(const SecondT &s) : _second(s) {}
 

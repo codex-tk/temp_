@@ -32,3 +32,12 @@ TEST(util, clazz) {
         tlab::clazz<sample>::container_of(&test_sample.value_4, &sample::value_4),
         &test_sample);
 }
+
+TEST(util,move){
+    int v = 1;
+    int v1 = std::move(v);
+    ASSERT_EQ(v,1);
+    void* p = &v;
+    void* p2 = std::move(p);
+    ASSERT_EQ(p,&v);
+}
