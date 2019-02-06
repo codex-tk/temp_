@@ -17,7 +17,7 @@ namespace tlab::ext::live555 {
 
 class rtsp_client {
 public:
-    rtsp_client(void);
+    rtsp_client(envir_loop &env);
 
     ~rtsp_client(void);
 
@@ -26,6 +26,7 @@ public:
               const std::size_t keep_session_time = 0);
 
     void close(void);
+
 private:
     // RTSP 'response handlers':
     void continueAfterDESCRIBE(int resultCode, char *resultString);
@@ -36,7 +37,8 @@ private:
     void subsessionByeHandler(MediaSubsession *subsession);
     //
     void handle_timer(void);
-
+    
+    void parse_sdp(const char *sdp);
 private:
     static void continueAfterDESCRIBE(RTSPClient *rtspClient, int resultCode,
                                       char *resultString);
@@ -50,13 +52,17 @@ private:
 
 private:
     envir_loop &_envir;
+    RTSPClient* _client;
     Authenticator _authenticator;
     MediaSession *_session;
     MediaSubsessionIterator *_iter;
     MediaSubsession *_subsession;
-    struct impl : public RTSPClient{
-        rtsp_client* client;
-    } * _impl;
+	TaskToken _timer_task;
+    bool _stream_using_tcp;
+    std::size_t _keep_session_time;
+    std::atomic<int> _flag;
+    std::string _sps;
+    std::string _pps;
 };
 
 } // namespace tlab::ext::live555

@@ -16,7 +16,8 @@
 
 namespace tlab {
 
-template <typename T, template <typename> class AllocatorT> class memory_block {
+template <typename T, template <typename> class AllocatorT = std::allocator>
+class memory_block {
 public:
     using pointer_type = T *;
 

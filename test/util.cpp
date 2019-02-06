@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <tlab/util.hpp>
+#include <tlab/ext/live555/envir_loop.hpp>
+#include <tlab/ext/live555/rtsp_client.hpp>
 
 void gprintf(const char *fmt, ...);
 
@@ -40,4 +42,10 @@ TEST(util,move){
     void* p = &v;
     void* p2 = std::move(p);
     ASSERT_EQ(p,&v);
+}
+
+TEST(util,rtsp){
+    tlab::ext::live555::envir_loop loop;
+    tlab::ext::live555::rtsp_client client(loop);
+    client.open("rtsp://192.168.1.150/live0.264" , "admin" , "1234" , true);
 }

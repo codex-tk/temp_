@@ -3,11 +3,11 @@
 #include <tlab/memory_block.hpp>
 
 TEST(tlab, memory_block) {
-    tlab::memory_block<char, std::allocator> block;
-    tlab::memory_block<char, std::allocator> block_10(10);
+    tlab::memory_block<char> block;
+    tlab::memory_block<char> block_10(10);
 
     do {
-        tlab::memory_block<char, std::allocator> block_10_r(block_10);
+        tlab::memory_block<char> block_10_r(block_10);
         ASSERT_EQ(block_10.use_count(), block_10_r.use_count());
         ASSERT_EQ(tlab::block_refs(block_10), 2);
         ASSERT_EQ(tlab::block_refs(int()), 0);
@@ -15,7 +15,7 @@ TEST(tlab, memory_block) {
         ASSERT_EQ(block_10.size(), block_10_r.size());
     } while (0);
 
-    ASSERT_EQ(block_10.use_count(), 1);
+    ASSERT_EQ(tlab::block_refs(block_10), 1);
 }
 
 TEST(tlab, byte_buffer) {
