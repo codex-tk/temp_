@@ -12,105 +12,14 @@
 #include <map>
 #include <tlab/ext/live555/rtsp_client.hpp>
 #include <tlab/util.hpp>
-
+// check https://github.com/mpromonet
 namespace tlab::ext::live555 {
-
-namespace {
-static const char b64_table[65] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const char b64_table_r[128] = {
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-    64, 64, 64, 64, 64, 62, 64, 64, 64, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-    61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64,
-    64, 64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-    43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64};
-
-} // namespace
-
-std::string base64_encode(void *ptr, std::size_t size) {
-    using ::std::numeric_limits;
-
-    if (size > (std::numeric_limits<std::string::size_type>::max() / 4u) * 3u) {
-        return "";
-    }
-
-    std::string retval((((size + 2) / 3) * 4), '=');
-    std::size_t outpos = 0;
-    int bits_collected = 0;
-    unsigned int accumulator = 0;
-    unsigned char *buffer = static_cast<unsigned char *>(ptr);
-    for (uint32_t i = 0; i < size; ++i) {
-        accumulator = (accumulator << 8) | (buffer[i] & 0xff);
-        bits_collected += 8;
-        while (bits_collected >= 6) {
-            bits_collected -= 6;
-            retval[outpos++] =
-                b64_table[(accumulator >> bits_collected) & 0x3fu];
-        }
-    }
-    if (bits_collected > 0) {
-        accumulator <<= 6 - bits_collected;
-        retval[outpos++] = b64_table[accumulator & 0x3fu];
-    }
-    return retval;
-}
-
-int base64_decode(const std::string &src, void *ptr, std::size_t size) {
-    int index = 0;
-    unsigned char *buffer = static_cast<unsigned char *>(ptr);
-    const std::string::const_iterator last = src.end();
-    int bits_collected = 0;
-    unsigned int accumulator = 0;
-
-    for (std::string::const_iterator i = src.begin(); i != last; ++i) {
-        const int c = *i;
-        if (isspace(c) || c == '=') {
-            continue;
-        }
-        if ((c > 127) || (c < 0) || (b64_table_r[c] > 63)) {
-            //
-        }
-        accumulator = (accumulator << 6) | b64_table_r[c];
-        bits_collected += 6;
-        if (bits_collected >= 8) {
-            bits_collected -= 8;
-            buffer[index++] = (char)((accumulator >> bits_collected) & 0xff);
-        }
-    }
-    return index;
-}
-
-template <typename string_type>
-static std::vector<string_type> split(const string_type &message,
-                                      const string_type &sep) {
-    typename string_type::size_type msgEnd = message.length();
-    typename string_type::size_type start = 0;
-    typename string_type::size_type stop = 0;
-
-    std::vector<string_type> result;
-    start = message.find_first_not_of(sep);
-    while (true) {
-        if (start >= msgEnd)
-            break;
-
-        stop = message.find_first_of(sep, start);
-        if (stop == string_type::npos)
-            stop = msgEnd;
-
-        result.push_back(message.substr(start, stop - start));
-        start = message.find_first_not_of(sep, stop + 1);
-    }
-    return result;
-}
 
 template <typename string_type>
 static string_type to_upper(const string_type &msg) {
     string_type out;
     out.reserve(msg.length());
     for (typename string_type::size_type idx = 0; idx < msg.length(); ++idx) {
-
         if (msg[idx] < 0xff && isalpha(msg[idx]) && islower(msg[idx])) {
             out.push_back(_toupper(msg[idx]));
         } else {
@@ -431,11 +340,35 @@ void rtsp_client::subsessionByeHandler(MediaSubsession *subsession) {
 void rtsp_client::parse_sdp(const char *sdp) {
     if (std::string(sdp).find("H264") == std::string::npos)
         return;
+    /*
+    v=0
+    o=- 946684803590602 1 IN IP4 192.168.1.150
+    s=Session streamed by "rtspServerForJovision"
+    i=live0.264
+    t=0 0
+    a=tool:LIVE555 Streaming Media v2013.09.18
+    a=type:broadcast
+    a=control:*
+    a=range:npt=0-
+    a=x-qt-text-nam:Session streamed by "rtspServerForJovision"
+    a=x-qt-text-inf:live0.264
+    m=video 0 RTP/AVP 96
+    c=IN IP4 0.0.0.0
+    b=AS:3072
+    a=rtpmap:96 H264/90000
+    a=fmtp:96 packetization-mode=1;profile-level-id=4D001F;sprop-parameter-sets=Z00AH5WoEsFWQA==,aO48gA==
+    a=control:track1
+    m=audio 0 RTP/AVP 97
+    c=IN IP4 0.0.0.0
+    b=AS:40
+    a=rtpmap:97 PCMU/8000
+    a=control:track2
+    */
+    std::vector<std::string> values;
+    tlab::split(std::string(sdp), std::string("\r\n"), std::back_inserter(values));
 
-    std::vector<std::string> lines =
-        split(std::string(sdp), std::string("\r\n"));
     std::string fmtp = "";
-    for (const std::string &line : lines) {
+    for (const std::string &line : values) {
         if (line.find("a=fmtp") != std::string::npos) {
             fmtp = line.substr(2, line.length() - 2);
         }
@@ -443,8 +376,9 @@ void rtsp_client::parse_sdp(const char *sdp) {
 
     if (fmtp == "")
         return;
-
-    std::vector<std::string> values = split(fmtp, std::string(";"));
+        
+    values.clear();
+    split(fmtp, std::string(";"),std::back_inserter(values));
     std::string sps_set = "";
     std::string sps_key = "sprop-parameter-sets=";
     for (const std::string &sps : values) {
@@ -458,7 +392,7 @@ void rtsp_client::parse_sdp(const char *sdp) {
         return;
 
     values.clear();
-    values = split(sps_set, std::string(","));
+    tlab::split(sps_set, std::string(","), std::back_inserter(values));
     if (values.size() != 2)
         return;
 

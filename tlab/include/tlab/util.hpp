@@ -92,6 +92,30 @@ inline const Parent *container_of(const Member *member,
         offset_of(ptr_to_member)));
 }
 // ]]
+
+struct base64 {
+    static std::string encode(void *ptr, const std::size_t size);
+    static int decode(const std::string &src, void *ptr,
+                      const std::size_t size);
+};
+
+template <typename StringT,typename OutputIteratorT>
+static void split(const StringT &message, const StringT &sep, OutputIteratorT it) {
+    typename StringT::size_type msg_end = message.length();
+    typename StringT::size_type start = 0;
+    typename StringT::size_type stop = 0;
+
+    start = message.find_first_not_of(sep);
+    while (start != StringT::npos) {
+        stop = message.find_first_of(sep, start);
+        if (stop == StringT::npos)
+            stop = msg_end;
+
+        *it++ = message.substr(start, stop - start);
+        start = message.find_first_not_of(sep, stop + 1);
+    }
+}
+
 } // namespace tlab
 
 #endif
