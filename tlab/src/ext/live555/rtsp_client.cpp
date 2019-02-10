@@ -73,24 +73,33 @@ public:
 
         */
 #ifdef DEBUG_PRINT_EACH_RECEIVED_FRAME
-        if (fStreamId != NULL)
-            envir() << "Stream \"" << fStreamId << "\"; ";
-        envir() << fSubsession.mediumName() << "/" << fSubsession.codecName()
-                << ":\tReceived " << frameSize << " bytes";
-        if (numTruncatedBytes > 0)
-            envir() << " (with " << numTruncatedBytes << " bytes truncated)";
-        char uSecsStr[6 + 1]; // used to output the 'microseconds' part of the
-                              // presentation time
-        sprintf(uSecsStr, "%06u", (unsigned)presentationTime.tv_usec);
-        envir() << ".\tPresentation time: " << (unsigned)presentationTime.tv_sec
-                << "." << uSecsStr;
-        if (fSubsession.rtpSource() != NULL &&
-            !fSubsession.rtpSource()->hasBeenSynchronizedUsingRTCP()) {
-            envir() << "!"; // mark the debugging output to indicate that this
+        if (strcmp(fSubsession.codecName(), "H264") == 0) {
+
+            if (fStreamId != NULL)
+                envir() << "Stream \"" << fStreamId << "\"; ";
+            envir() << fSubsession.mediumName() << "/"
+                    << fSubsession.codecName() << ":\tReceived " << frameSize
+                    << " bytes";
+            if (numTruncatedBytes > 0)
+                envir() << " (with " << numTruncatedBytes
+                        << " bytes truncated)";
+            char uSecsStr[6 + 1]; // used to output the 'microseconds' part of
+                                  // the presentation time
+            sprintf(uSecsStr, "%06u", (unsigned)presentationTime.tv_usec);
+            envir() << ".\tPresentation time: "
+                    << (unsigned)presentationTime.tv_sec << "." << uSecsStr;
+            if (fSubsession.rtpSource() != NULL &&
+                !fSubsession.rtpSource()->hasBeenSynchronizedUsingRTCP()) {
+                envir()
+                    << "!"; // mark the debugging output to indicate that this
                             // presentation time is not RTCP-synchronized
+            }
+            if ((fReceiveBuffer[0] & 0x1f) != 1)
+                envir() << "type: " << (fReceiveBuffer[0] & 0x1f) << "\n";
+            else
+                envir() << "\n";
         }
-        envir() << "\n";
-#endif
+#endif 
         // Then continue, to request the next frame of data:
         continuePlaying();
     }
@@ -282,7 +291,6 @@ void rtsp_client::continueAfterSETUP(int resultCode, char *resultString) {
     if (_subsession->sink == NULL) {
         return;
     }
-
     _subsession->miscPtr = this; // a hack to let subsession handle functions
                                  // get the "RTSPClient" from the subsession
     _subsession->sink->startPlaying(*(_subsession->readSource()),
