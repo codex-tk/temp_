@@ -86,6 +86,12 @@ public:
         }
     }
 
+	void write(void *ptr, const std::size_t size) { 
+		reserve(size);
+		memcpy(pptr(),ptr,size);
+		pptr(size);
+	}
+
 private:
     BlockT<T, AllocatorT> _block;
     int _gpos;

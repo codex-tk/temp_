@@ -16,6 +16,8 @@
 #include <tlab/basic_buffer.hpp>
 #include <tlab/internal.hpp>
 
+#include <tlab/ext/live555/envir_loop.hpp>
+
 #include "FramedSource.hh"
 
 namespace tlab::ext::live555 {
@@ -27,15 +29,16 @@ public:
         timeval presenttime;
     };
 
-    static FramedSource *createNew(UsageEnvironment &env) {
-        return new simple_h264_framed_source(env);
+    static simple_h264_framed_source *createNew(tlab::ext::live555::envir_loop &loop) {
+        return new simple_h264_framed_source(loop);
     }
 
     static void deliverFrame0(void *clientData) {
         ((simple_h264_framed_source *)clientData)->deliverFrame();
     }
 
-    simple_h264_framed_source(UsageEnvironment &env) : FramedSource(env) {
+    simple_h264_framed_source(tlab::ext::live555::envir_loop &loop)
+        : FramedSource(loop.envir()) {
         _event_trigger_id =
             envir().taskScheduler().createEventTrigger(deliverFrame0);
     }
@@ -54,7 +57,7 @@ public:
         if (!isCurrentlyAwaitingData())
             return;
         fDurationInMicroseconds = 0;
-        if (!_buffers.empty) {
+        if (!_buffers.empty()) {
             frame new_frame = _buffers.front();
             _buffers.pop_front();
 

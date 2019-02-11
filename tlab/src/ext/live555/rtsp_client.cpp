@@ -29,97 +29,6 @@ static string_type to_upper(const string_type &msg) {
     return out;
 }
 
-class sink : public MediaSink {
-public:
-    static sink *createNew(UsageEnvironment &env, MediaSubsession &subsession,
-                    char const *streamId) {
-        return new sink(env, subsession, streamId);
-    }
-
-    sink(UsageEnvironment &env, MediaSubsession &subsession,
-         char const *streamId)
-        : MediaSink(env), fSubsession(subsession) {
-        fStreamId = strDup(streamId);
-        fReceiveBuffer = new u_int8_t[1024768];
-    }
-
-    virtual ~sink() {
-        delete[] fReceiveBuffer;
-        delete[] fStreamId;
-    }
-
-    static void afterGettingFrame(void *clientData, unsigned frameSize,
-                                  unsigned numTruncatedBytes,
-                                  struct timeval presentationTime,
-                                  unsigned durationInMicroseconds) {
-        sink *s = (sink *)clientData;
-        s->afterGettingFrame(frameSize, numTruncatedBytes, presentationTime,
-                             durationInMicroseconds);
-    }
-
-// If you don't want to see debugging output for each received frame, then
-// comment out the following line:
-#define DEBUG_PRINT_EACH_RECEIVED_FRAME 0
-    void afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes,
-                           struct timeval presentationTime,
-                           unsigned /*durationInMicroseconds*/) {
-        // We've just received a frame of data.  (Optionally) print out
-        // information about it:
-        /*
-        _client->on_sink_data(fSubsession.mediumName(), fSubsession.codecName(),
-                              fReceiveBuffer, frameSize,
-                              (presentationTime.tv_sec * 1000000) +
-                                  presentationTime.tv_usec);
-
-        */
-#ifdef DEBUG_PRINT_EACH_RECEIVED_FRAME
-        if (strcmp(fSubsession.codecName(), "H264") == 0) {
-
-            if (fStreamId != NULL)
-                envir() << "Stream \"" << fStreamId << "\"; ";
-            envir() << fSubsession.mediumName() << "/"
-                    << fSubsession.codecName() << ":\tReceived " << frameSize
-                    << " bytes";
-            if (numTruncatedBytes > 0)
-                envir() << " (with " << numTruncatedBytes
-                        << " bytes truncated)";
-            char uSecsStr[6 + 1]; // used to output the 'microseconds' part of
-                                  // the presentation time
-            sprintf(uSecsStr, "%06u", (unsigned)presentationTime.tv_usec);
-            envir() << ".\tPresentation time: "
-                    << (unsigned)presentationTime.tv_sec << "." << uSecsStr;
-            if (fSubsession.rtpSource() != NULL &&
-                !fSubsession.rtpSource()->hasBeenSynchronizedUsingRTCP()) {
-                envir()
-                    << "!"; // mark the debugging output to indicate that this
-                            // presentation time is not RTCP-synchronized
-            }
-            if ((fReceiveBuffer[0] & 0x1f) != 1)
-                envir() << "type: " << (fReceiveBuffer[0] & 0x1f) << "\n";
-            else
-                envir() << "\n";
-        }
-#endif 
-        // Then continue, to request the next frame of data:
-        continuePlaying();
-    }
-
-    Boolean continuePlaying() {
-        if (fSource == NULL)
-            return False; // sanity check (should not happen)
-
-        // Request the next frame of data from our input source.
-        // "afterGettingFrame()" will get called later, when it arrives:
-        fSource->getNextFrame(fReceiveBuffer, 1024768, afterGettingFrame, this,
-                              onSourceClosure, this);
-        return True;
-    }
-
-private:
-    u_int8_t *fReceiveBuffer;
-    MediaSubsession &fSubsession;
-    char *fStreamId;
-};
 
 std::map<RTSPClient *, rtsp_client *> _clients;
 
@@ -165,9 +74,11 @@ rtsp_client::rtsp_client(envir_loop &env)
 
 rtsp_client::~rtsp_client(void) {}
 
-bool rtsp_client::open(const std::string &url, const std::string &user,
-                       const std::string &pw, const bool stream_using_tcp,
+bool rtsp_client::open(const rtsp_handler_ptr &handler, const std::string &url,
+                       const std::string &user, const std::string &pw,
+                       const bool stream_using_tcp,
                        const std::size_t keep_session_time) {
+    _handler_ptr = handler;
     _authenticator.setUsernameAndPassword(user.c_str(), pw.c_str());
     _stream_using_tcp = stream_using_tcp;
     _keep_session_time = keep_session_time;
@@ -286,7 +197,7 @@ void rtsp_client::continueAfterSETUP(int resultCode, char *resultString) {
         return;
     }
     _subsession->sink =
-        sink::createNew(_envir.envir(), *_subsession, _client->url());
+        sink::createNew(_envir.envir(), *_subsession, _client->url(),this);
 
     if (_subsession->sink == NULL) {
         return;
@@ -364,7 +275,8 @@ void rtsp_client::parse_sdp(const char *sdp) {
     c=IN IP4 0.0.0.0
     b=AS:3072
     a=rtpmap:96 H264/90000
-    a=fmtp:96 packetization-mode=1;profile-level-id=4D001F;sprop-parameter-sets=Z00AH5WoEsFWQA==,aO48gA==
+    a=fmtp:96
+    packetization-mode=1;profile-level-id=4D001F;sprop-parameter-sets=Z00AH5WoEsFWQA==,aO48gA==
     a=control:track1
     m=audio 0 RTP/AVP 97
     c=IN IP4 0.0.0.0
@@ -373,7 +285,8 @@ void rtsp_client::parse_sdp(const char *sdp) {
     a=control:track2
     */
     std::vector<std::string> values;
-    tlab::split(std::string(sdp), std::string("\r\n"), std::back_inserter(values));
+    tlab::split(std::string(sdp), std::string("\r\n"),
+                std::back_inserter(values));
 
     std::string fmtp = "";
     for (const std::string &line : values) {
@@ -384,9 +297,9 @@ void rtsp_client::parse_sdp(const char *sdp) {
 
     if (fmtp == "")
         return;
-        
+
     values.clear();
-    split(fmtp, std::string(";"),std::back_inserter(values));
+    split(fmtp, std::string(";"), std::back_inserter(values));
     std::string sps_set = "";
     std::string sps_key = "sprop-parameter-sets=";
     for (const std::string &sps : values) {

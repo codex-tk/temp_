@@ -12,6 +12,7 @@
 #define __tlab_ext_live555_rtsp_client_h__
 
 #include <tlab/ext/live555/envir_loop.hpp>
+#include <tlab/ext/live555/rtsp_handler.hpp>
 
 namespace tlab::ext::live555 {
 
@@ -21,11 +22,101 @@ public:
 
     ~rtsp_client(void);
 
-    bool open(const std::string &url, const std::string &user,
-              const std::string &pw, const bool stream_using_tcp = true,
+    bool open(const rtsp_handler_ptr &handler, const std::string &url,
+              const std::string &user, const std::string &pw,
+              const bool stream_using_tcp = true,
               const std::size_t keep_session_time = 0);
 
     void close(void);
+
+private:
+    class sink : public MediaSink {
+    public:
+        static sink *createNew(UsageEnvironment &env,
+                               MediaSubsession &subsession,
+                               char const *streamId , rtsp_client *client) {
+            return new sink(env, subsession, streamId, client);
+        }
+
+        sink(UsageEnvironment &env, MediaSubsession &subsession,
+             char const *streamId, rtsp_client *client)
+            : MediaSink(env), _client(client), fSubsession(subsession) {
+            fStreamId = strDup(streamId);
+            fReceiveBuffer = new u_int8_t[1024768];
+        }
+
+        virtual ~sink() {
+            delete[] fReceiveBuffer;
+            delete[] fStreamId;
+        }
+
+        static void afterGettingFrame(void *clientData, unsigned frameSize,
+                                      unsigned numTruncatedBytes,
+                                      struct timeval presentationTime,
+                                      unsigned durationInMicroseconds) {
+            sink *s = (sink *)clientData;
+            s->afterGettingFrame(frameSize, numTruncatedBytes, presentationTime,
+                                 durationInMicroseconds);
+        }
+
+// If you don't want to see debugging output for each received frame, then
+// comment out the following line:
+#define DEBUG_PRINT_EACH_RECEIVED_FRAME 0
+        void afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes,
+                               struct timeval presentationTime,
+                               unsigned /*durationInMicroseconds*/) {
+            _client->_handler_ptr->on_frame(
+                fSubsession.mediumName(), fSubsession.codecName(),
+                presentationTime, fReceiveBuffer, frameSize);
+#ifdef DEBUG_PRINT_EACH_RECEIVED_FRAME
+            if (strcmp(fSubsession.codecName(), "H264") == 0) {
+
+                if (fStreamId != NULL)
+                    envir() << "Stream \"" << fStreamId << "\"; ";
+                envir() << fSubsession.mediumName() << "/"
+                        << fSubsession.codecName() << ":\tReceived "
+                        << frameSize << " bytes";
+                if (numTruncatedBytes > 0)
+                    envir() << " (with " << numTruncatedBytes
+                            << " bytes truncated)";
+                char uSecsStr[6 + 1]; // used to output the 'microseconds' part
+                                      // of the presentation time
+                sprintf(uSecsStr, "%06u", (unsigned)presentationTime.tv_usec);
+                envir() << ".\tPresentation time: "
+                        << (unsigned)presentationTime.tv_sec << "." << uSecsStr;
+                if (fSubsession.rtpSource() != NULL &&
+                    !fSubsession.rtpSource()->hasBeenSynchronizedUsingRTCP()) {
+                    envir() << "!"; // mark the debugging output to indicate
+                                    // that this presentation time is not
+                                    // RTCP-synchronized
+                }
+                if ((fReceiveBuffer[0] & 0x1f) != 1)
+                    envir() << "type: " << (fReceiveBuffer[0] & 0x1f) << "\n";
+                else
+                    envir() << "\n";
+            }
+#endif
+            // Then continue, to request the next frame of data:
+            continuePlaying();
+        }
+
+        Boolean continuePlaying() {
+            if (fSource == NULL)
+                return False; // sanity check (should not happen)
+
+            // Request the next frame of data from our input source.
+            // "afterGettingFrame()" will get called later, when it arrives:
+            fSource->getNextFrame(fReceiveBuffer, 1024768, afterGettingFrame,
+                                  this, onSourceClosure, this);
+            return True;
+        }
+
+    private:
+        u_int8_t *fReceiveBuffer;
+        MediaSubsession &fSubsession;
+        char *fStreamId;
+        rtsp_client *_client;
+    };
 
 private:
     // RTSP 'response handlers':
@@ -37,8 +128,9 @@ private:
     void subsessionByeHandler(MediaSubsession *subsession);
     //
     void handle_timer(void);
-    
+
     void parse_sdp(const char *sdp);
+
 private:
     static void continueAfterDESCRIBE(RTSPClient *rtspClient, int resultCode,
                                       char *resultString);
@@ -52,12 +144,13 @@ private:
 
 private:
     envir_loop &_envir;
-    RTSPClient* _client;
+    rtsp_handler_ptr _handler_ptr;
+    RTSPClient *_client;
     Authenticator _authenticator;
     MediaSession *_session;
     MediaSubsessionIterator *_iter;
     MediaSubsession *_subsession;
-	TaskToken _timer_task;
+    TaskToken _timer_task;
     bool _stream_using_tcp;
     std::size_t _keep_session_time;
     std::atomic<int> _flag;
